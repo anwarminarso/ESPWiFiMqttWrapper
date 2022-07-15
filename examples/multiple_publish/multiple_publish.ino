@@ -77,11 +77,11 @@ void setup() {
 		float lon = 106.7189562f;
 
 		// contoh membuat dokumen JSON
-		doc["latidue"] = lat;
+		doc["latitude"] = lat;
 		doc["longitude"] = lon;
 
 		// Serialisasi object doc menjadi format JSON ke variabel message
-		// Contoh Output messge => { "latidue": -6.3023799,"longitude":106.7189562 }
+		// Contoh Output messge => { "latitude": -6.3023799,"longitude":106.7189562 }
 		serializeJson(doc, message);
 		return message;
 	});
@@ -93,8 +93,8 @@ void loop() {
 	wrapper.loop();
 	
 	if (temperature > 30) {
-		// publish jika ada kejadian, tertentu
-		wrapper.publish(MQTT_Publish_TOPIC_NOTIFIKASI, "temperature lebih dari 30");
+		// publish jika ada kejadian suhu lebih dari 30 derajat
+		wrapper.publish(MQTT_Publish_TOPIC_NOTIFIKASI, "Suhu lebih dari 30");
 		delay(1000);
 	}
 }
