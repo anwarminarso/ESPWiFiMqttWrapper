@@ -27,7 +27,7 @@ wrapper.setPublisher("/MyTopic", 1000, [&] {
 ```
 
 
-#### Simple Subscribe MQTT Topic
+#### Simple Subscription
 ```cpp
 wrapper.setSubscription("/MyTopic", [&](const char* message) {
   Serial.print("Message Received : ");
@@ -50,7 +50,8 @@ wrapper.setSubscription("/MyTopic", [&](const char* message) {
 ```
 
 ## Related Link
-
+- [PubSubClient](https://github.com/knolleary/pubsubclient "PubSubClient")
+- [ArduinoJSON](https://github.com/bblanchon/ArduinoJson "ArduinoJSON")
 
 ## License
-
+[MIT License](https://github.com/anwarminarso/ESPWiFiMqttWrapper/blob/main/LICENSE.txt "MIT License")
