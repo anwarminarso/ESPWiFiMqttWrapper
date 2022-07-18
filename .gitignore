@@ -1,8 +1,22 @@
-**/.vs/
-**/.Debug/
-**/Release/
-**/__vm/
+# User-specific files
+*.suo
+*.user
+*.userosscache
+*.sln.docstates
+*.sln
 *.vcxproj
 *.filters
-*.user
-*.sln
+
+# Build results
+[Dd]ebug/
+[Dd]ebugPublic/
+[Rr]elease/
+[Rr]eleases/
+x64/
+x86/
+bld/
+[Bb]in/
+[Oo]bj/
+__vm/
+.vs/
+
