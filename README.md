@@ -8,7 +8,7 @@ This library is for ESP32/ESP8266 for easy use of WiFi and MQTT
 
 #### Publishing MQTT Topic every 10 seconds
 ```cpp
-wrapper.setPublisher("/MyTopic", 1000, [&] {
+wrapper.setPublisher("/MyTopic", 10000, [&] {
   String message = "";
   DynamicJsonDocument doc(512);
   
