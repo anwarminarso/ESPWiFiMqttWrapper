@@ -109,7 +109,7 @@ void ESPWiFiMqttWrapper::setMqttServer() {
 	clientId.toCharArray(clientIdChars, str_len);
 	_mqttClientId = clientIdChars;
 	_mqttClient.setServer(_mqttServer, _mqttPort);
-	Serial.println(_mqttClientId);
+	this->println(_mqttClientId);
 }
 
 SubscribeHandler& ESPWiFiMqttWrapper::setSubscription(const char* topicFilter, ArSubscribeHandlerFunction func) {
