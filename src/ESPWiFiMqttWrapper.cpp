@@ -103,10 +103,13 @@ void ESPWiFiMqttWrapper::setMqttServer() {
 #elif defined(ESP32)
 	String clientId = "ESP32-";
 #endif
-	
 	clientId += getWifiMacAddress();
-	_mqttClientId = clientId.c_str();
+	int str_len = clientId.length() + 1;
+	char* clientIdChars = (char*)malloc(str_len);
+	clientId.toCharArray(clientIdChars, str_len);
+	_mqttClientId = clientIdChars;
 	_mqttClient.setServer(_mqttServer, _mqttPort);
+	Serial.println(_mqttClientId);
 }
 
 SubscribeHandler& ESPWiFiMqttWrapper::setSubscription(const char* topicFilter, ArSubscribeHandlerFunction func) {
