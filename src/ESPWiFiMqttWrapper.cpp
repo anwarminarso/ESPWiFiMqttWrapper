@@ -208,6 +208,8 @@ bool ESPWiFiMqttWrapper::connectMqtt() {
 		if (_mqttClient.connect(_mqttClientId, _mqttUsername, _mqttPassword)) {
 			this->println("connected");
 			for (const auto& h : _subscribehandlers) {
+				this->print("Subscribing to ");
+				this->println(h->getTopicFilter());
 				_mqttClient.subscribe(h->getTopicFilter());
 			}
 			_reconnectMqttCount = 0;

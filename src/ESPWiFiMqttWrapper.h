@@ -372,10 +372,10 @@ public:
 	bool IsSecureWiFi() {
 		return _useSecureWiFi;
 	}
-	void setWiFi(WiFiClient &client) {
+	void setWiFi(WiFiClient& client) {
 		_defaultClient = client;
 	}
-	void setWiFiSecure(WiFiClientSecure &client) {
+	void setWiFiSecure(WiFiClientSecure& client) {
 		_secureClient = client;
 	}
 
