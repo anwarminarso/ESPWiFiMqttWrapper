@@ -1,17 +1,17 @@
 #include <Arduino.h>
-#include <ArduinoJSON.h>
-#include "ESPWiFiMqttWrapper.h"
+#include <ESPWiFiMqttWrapper.h>
 
 //Code ini support untuk ESP32 dan ESP8266
 //Membutuhkan library ArduinoJSON dan library PubSubClient
 //https://www.arduino.cc/reference/en/libraries/arduinojson/
 //https://www.arduino.cc/reference/en/libraries/pubsubclient/
+
 ESPWiFiMqttWrapper wrapper;
 
 
-const char* MQTT_Server		= "iot.a2n.tech"; // server MQTT
-const char* MQTT_username	= "Your User Name"; // login user anda pada aplikasi
-const char* MQTT_password	= "Your Password"; // password login anda pada aplikasi
+const char* MQTT_Server		= "iot.a2n.tech";	// server MQTT
+const char* MQTT_username	= "Your User Name"; // your username or api id
+const char* MQTT_password	= "Your Password";	// your mqqtt password of api secret
 
 const char* WiFi_SSID		= "Your WiFi SSID"; // nama wifi anda
 const char* WiFi_Password	= "Your WiFi Password"; // password wifi anda
