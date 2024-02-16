@@ -1,8 +1,8 @@
  //------------------------------------------------------------------
- // Copyright(c) 2022 a2n Technology
+ // Copyright(c) 2022-2024 a2n Technology
  // Anwar Minarso (anwar.minarso@gmail.com)
  // https://github.com/anwarminarso/
- // This file is part of the a2n ESPWiFiMqttWrapper
+ // This file is part of the a2n ESPWiFiMqttWrapper v1.0.3
  //
  // This library is free software; you can redistribute it and/or
  // modify it under the terms of the GNU Lesser General Public
@@ -33,6 +33,7 @@
 #elif defined(ESP32)
 #include <WiFi.h>
 #endif
+#include <WiFiClientSecure.h>
 
 typedef std::function<void(char*, uint8_t*, unsigned int)> ArSubscribeHandlerFunction;
 typedef std::function<void(const char*)> ArSubscribeMessageHandlerFunction;
@@ -227,6 +228,9 @@ public:
 	const char* getTopic() {
 		return _topic;
 	}
+	bool isTopicEqual(const char* topic) {
+		return strcmp(topic, _topic) == 0;
+	}
 	void setFunction(ArPublishHandlerFunction func) { _func = func; }
 	void setInterval(long interval) { _interval = interval; }
 	void setStartDelay(long startDelay) { _startDelay = startDelay; }
@@ -253,7 +257,14 @@ public:
 class ESPWiFiMqttWrapper {
 private:
 	const char* _mqttServer = "iot.a2n.tech";
+#if defined(USE_SECURE_MQTT)
+	uint16_t _mqttPort = 8883;
+#else
 	uint16_t _mqttPort = 1883;
+#endif
+
+	WiFiClient _defaultClient;
+	WiFiClientSecure _secureClient;
 
 	PubSubClient _mqttClient;
 	ListOf<SubscribeHandler*> _subscribehandlers;
@@ -262,6 +273,7 @@ private:
 
 	int _maxReconnect = 30;
 	bool _debug;
+	bool _useSecureWiFi = false;
 	const char* _mqttUsername;
 	const char* _mqttPassword;
 	const char* _mqttClientId;
@@ -329,7 +341,10 @@ private:
 	void setMqttServer();
 public:
 	ESPWiFiMqttWrapper();
+	void setMqttClientId(const char* ClientId);
+	void setMqttServer(const char* mqttServer);
 	void setMqttServer(const char* UserName, const char* Password);
+	void setMqttServer(const char* mqttServer, uint16_t mqttPort);
 	void setMqttServer(const char* mqttServer, const char* UserName, const char* Password);
 	void setMqttServer(const char* mqttServer, uint16_t mqttPort, const char* UserName, const char* Password);
 	void setDebugger(Stream* debugger) {
@@ -340,11 +355,30 @@ public:
 	SubscribeHandler& setSubscription(const char* topicFilter, ArSubscribeMessageHandlerFunction func);
 	PublishHandler& setPublisher(const char* topic, int interval, ArPublishHandlerFunction func);
 	PublishHandler& setPublisher(const char* topic, int interval, int startDelay, ArPublishHandlerFunction func);
+	void removePublisher(const char* topic);
+	void removeSubscription(const char* topicFilter);
 	void setMaxReconnect(int value) {
 		_maxReconnect = value;
 	};
 	void setWiFi(const char* hostName, const char* SSID, const char* wifiPassword);
-	void setWiFi(WiFiClient client);
+
+	void setCACert(const char* Certificate);
+	void setCertificate(const char* Certificate);
+	void setPrivateKey(const char* PrivateKey);
+
+	bool useSecureWiFi(bool value) {
+		_useSecureWiFi = value;
+	}
+	bool IsSecureWiFi() {
+		return _useSecureWiFi;
+	}
+	void setWiFi(WiFiClient &client) {
+		_defaultClient = client;
+	}
+	void setWiFiSecure(WiFiClientSecure &client) {
+		_secureClient = client;
+	}
+
 	void initWiFi();
 	void initMqtt();
 	bool loop();

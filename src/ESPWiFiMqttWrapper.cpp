@@ -1,8 +1,8 @@
  //------------------------------------------------------------------
- // Copyright(c) 2022 a2n Technology
+ // Copyright(c) 2022-2024 a2n Technology
  // Anwar Minarso (anwar.minarso@gmail.com)
  // https://github.com/anwarminarso/
- // This file is part of the a2n ESPWiFiMqttWrapper
+ // This file is part of the a2n ESPWiFiMqttWrapper v1.0.3
  //
  // This library is free software; you can redistribute it and/or
  // modify it under the terms of the GNU Lesser General Public
@@ -16,7 +16,7 @@
  //------------------------------------------------------------------
 
 #include "ESPWiFiMqttWrapper.h"
-WiFiClient _client;
+
 int _reconnectMqttCount = 0;
 int _reconnectWifiCount = 0;
 int _lastReconnect = 0;
@@ -43,9 +43,22 @@ void ESPWiFiMqttWrapper::setWiFi(const char* HostName, const char* SSID, const c
 	this->_wifiSSID = SSID;
 	this->_wifiPass = Password;
 }
-void ESPWiFiMqttWrapper::setWiFi(WiFiClient client) {
-	_client = client;
+void ESPWiFiMqttWrapper::setMqttClientId(const char* ClientId) {
+	this->_mqttClientId = ClientId;
 }
+void ESPWiFiMqttWrapper::setCACert(const char* Certificate) {
+	this->_secureClient.setCACert(Certificate);
+	this->_useSecureWiFi = true;
+}
+void ESPWiFiMqttWrapper::setCertificate(const char* Certificate) {
+	this->_secureClient.setCertificate(Certificate);
+	this->_useSecureWiFi = true;
+}
+void ESPWiFiMqttWrapper::setPrivateKey(const char* PrivateKey) {
+	this->_secureClient.setPrivateKey(PrivateKey);
+	this->_useSecureWiFi = true;
+}
+
 void ESPWiFiMqttWrapper::initWiFi() {
 	int connectionAttempt = 0;
 #if defined(ESP8266)
@@ -77,13 +90,22 @@ void ESPWiFiMqttWrapper::initWiFi() {
 	this->println(WiFi.localIP());
 }
 
+void ESPWiFiMqttWrapper::setMqttServer(const char* mqttServer) {
+	this->_mqttServer = mqttServer;
+	setMqttServer();
+}
+
+void ESPWiFiMqttWrapper::setMqttServer(const char* mqttServer, uint16_t mqttPort) {
+	this->_mqttServer = mqttServer;
+	this->_mqttPort = mqttPort;
+	setMqttServer();
+}
 void ESPWiFiMqttWrapper::setMqttServer(const char* mqttServer, uint16_t mqttPort, const char* UserName, const char* Password) {
 	this->_mqttServer = mqttServer;
 	this->_mqttPort = mqttPort;
 	this->_mqttUsername = UserName;
 	this->_mqttPassword = Password;
 	setMqttServer();
-	
 }
 void ESPWiFiMqttWrapper::setMqttServer(const char* mqttServer, const char* UserName, const char* Password) {
 	this->_mqttServer = mqttServer;
@@ -97,19 +119,26 @@ void ESPWiFiMqttWrapper::setMqttServer(const char* UserName, const char* Passwor
 	setMqttServer();
 }
 void ESPWiFiMqttWrapper::setMqttServer() {
-	_mqttClient.setClient(_client);
+	if (this->_useSecureWiFi) {
+		_mqttClient.setClient(_secureClient);
+	}
+	else {
+		_mqttClient.setClient(_defaultClient);
+	}
+	if (this->_mqttClientId && !this->_mqttClientId[0]) {
 #if defined(ESP8266)
-	String clientId = "ESP8266-";
+		String clientId = "ESP8266-";
 #elif defined(ESP32)
-	String clientId = "ESP32-";
+		String clientId = "ESP32-";
 #endif
-	clientId += getWifiMacAddress();
-	int str_len = clientId.length() + 1;
-	char* clientIdChars = (char*)malloc(str_len);
-	clientId.toCharArray(clientIdChars, str_len);
-	_mqttClientId = clientIdChars;
+		clientId += getWifiMacAddress();
+		int str_len = clientId.length() + 1;
+		char* clientIdChars = (char*)malloc(str_len);
+		clientId.toCharArray(clientIdChars, str_len);
+		_mqttClientId = clientIdChars;
+		this->println(_mqttClientId);
+	}
 	_mqttClient.setServer(_mqttServer, _mqttPort);
-	this->println(_mqttClientId);
 }
 
 SubscribeHandler& ESPWiFiMqttWrapper::setSubscription(const char* topicFilter, ArSubscribeHandlerFunction func) {
@@ -142,6 +171,16 @@ PublishHandler& ESPWiFiMqttWrapper::setPublisher(const char* topic, int interval
 	handler->setFunction(func);
 	this->addPublishHandler(handler);
 	return *handler;
+}
+void ESPWiFiMqttWrapper::removePublisher(const char* topic) {
+	this->_publishHandlers.remove_first([topic](PublishHandler* h) {
+		return h->isTopicEqual(topic);
+	});
+}
+void ESPWiFiMqttWrapper::removeSubscription(const char* topicFilter) {
+	this->_subscribehandlers.remove_first([topicFilter](SubscribeHandler* h) {
+		return h->canHandle(topicFilter);
+	});
 }
 void ESPWiFiMqttWrapper::initMqtt() {
 	_mqttClient.setCallback([&](char* topic, uint8_t* payload, unsigned int length) {
