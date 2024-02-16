@@ -4,20 +4,30 @@
 
 ESPWiFiMqttWrapper	KEYWORD1
 
-
 #######################################
 # Methods and Functions (KEYWORD2)
 #######################################
-
+setMqttClientId	KEYWORD2
+setDebugger	KEYWORD2
 setMqttServer	KEYWORD2
 setSubscription	KEYWORD2
+removeSubscription	KEYWORD2
 setPublisher	KEYWORD2
+removePublisher	KEYWORD2
+setMaxReconnect	KEYWORD2
 setWiFi	KEYWORD2
+setCACert KEYWORD2
+setCertificate KEYWORD2
+setPrivateKey KEYWORD2
+useSecureWiFi KEYWORD2
+IsSecureWiFi KEYWORD2
+setWiFi	KEYWORD2
+setWiFiSecure	KEYWORD2
 initWiFi	KEYWORD2
 initMqtt	KEYWORD2
 loop	KEYWORD2
 getMqttClient	KEYWORD2
-getFormattedTime	KEYWORD2
-getEpochTime	KEYWORD2
 publish	KEYWORD2
 publish_P	KEYWORD2
+connectMqtt	KEYWORD2
+connectWiFi	KEYWORD2
