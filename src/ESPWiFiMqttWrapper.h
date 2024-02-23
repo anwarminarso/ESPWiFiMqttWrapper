@@ -276,7 +276,7 @@ private:
 
 	const char* _mqttUsername;
 	const char* _mqttPassword;
-	const char* _mqttClientId;
+	const char* _mqttClientId = "";
 	const char* _wifiHostName;
 	const char* _wifiSSID;
 	const char* _wifiPass;
