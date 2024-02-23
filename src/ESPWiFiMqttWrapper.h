@@ -23,17 +23,15 @@
 //https://www.arduino.cc/reference/en/libraries/pubsubclient/
 #include <PubSubClient.h>
 
-//Arduino JSON Library (require install)
-//https://www.arduino.cc/reference/en/libraries/arduinojson/
-#include <ArduinoJson.h>
-
 // ESP32 Built In library
 #if defined(ESP8266)
 #include <ESP8266WiFi.h>
 #elif defined(ESP32)
 #include <WiFi.h>
-#endif
 #include <WiFiClientSecure.h>
+#else
+#error "This library only supports boards with ESP8266 or ESP32"
+#endif
 
 typedef std::function<void(char*, uint8_t*, unsigned int)> ArSubscribeHandlerFunction;
 typedef std::function<void(const char*)> ArSubscribeMessageHandlerFunction;
@@ -257,11 +255,7 @@ public:
 class ESPWiFiMqttWrapper {
 private:
 	const char* _mqttServer = "iot.a2n.tech";
-#if defined(USE_SECURE_MQTT)
-	uint16_t _mqttPort = 8883;
-#else
 	uint16_t _mqttPort = 1883;
-#endif
 
 	WiFiClient _defaultClient;
 	WiFiClientSecure _secureClient;
@@ -271,16 +265,26 @@ private:
 	ListOf<PublishHandler*> _publishHandlers;
 	Stream* _debugger;
 
+	int _reconnectMqttCount = 0;
+	int _reconnectWifiCount = 0;
+	int _lastReconnect = 0;
+	unsigned long now;
 	int _maxReconnect = 30;
 	bool _debug;
 	bool _useSecureWiFi = false;
+
+
 	const char* _mqttUsername;
 	const char* _mqttPassword;
 	const char* _mqttClientId;
 	const char* _wifiHostName;
 	const char* _wifiSSID;
 	const char* _wifiPass;
-
+#if defined(ESP8266)
+	X509List _caCert;
+	X509List _certificate;
+	PrivateKey _privateKey;
+#endif
 	bool connectMqtt();
 	bool connectWiFi();
 
@@ -339,6 +343,9 @@ private:
 		_debugger->println();
 	};
 	void setMqttServer();
+#if defined(ESP8266)
+	void setClock();
+#endif
 public:
 	ESPWiFiMqttWrapper();
 	void setMqttClientId(const char* ClientId);
@@ -366,7 +373,7 @@ public:
 	void setCertificate(const char* Certificate);
 	void setPrivateKey(const char* PrivateKey);
 
-	bool useSecureWiFi(bool value) {
+	void useSecureWiFi(bool value) {
 		_useSecureWiFi = value;
 	}
 	bool IsSecureWiFi() {

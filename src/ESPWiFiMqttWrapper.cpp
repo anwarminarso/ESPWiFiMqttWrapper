@@ -2,7 +2,7 @@
  // Copyright(c) 2022-2024 a2n Technology
  // Anwar Minarso (anwar.minarso@gmail.com)
  // https://github.com/anwarminarso/
- // This file is part of the a2n ESPWiFiMqttWrapper v1.0.3
+ // This file is part of the a2n ESPWiFiMqttWrapper v1.0.4
  //
  // This library is free software; you can redistribute it and/or
  // modify it under the terms of the GNU Lesser General Public
@@ -17,10 +17,6 @@
 
 #include "ESPWiFiMqttWrapper.h"
 
-int _reconnectMqttCount = 0;
-int _reconnectWifiCount = 0;
-int _lastReconnect = 0;
-unsigned long now;
 String getWifiMacAddress() {
 	String macAddress = WiFi.macAddress();
 	macAddress.remove(14, 1);
@@ -46,21 +42,56 @@ void ESPWiFiMqttWrapper::setWiFi(const char* HostName, const char* SSID, const c
 void ESPWiFiMqttWrapper::setMqttClientId(const char* ClientId) {
 	this->_mqttClientId = ClientId;
 }
-void ESPWiFiMqttWrapper::setCACert(const char* Certificate) {
-	this->_secureClient.setCACert(Certificate);
+void ESPWiFiMqttWrapper::setCACert(const char* certificate) {
+#if defined(ESP32)
+	this->_secureClient.setCACert(certificate);
+#elif defined(ESP8266)
+	_caCert = X509List(certificate);
+#else
+#error "Unsupported platform"
+#endif 
 	this->_useSecureWiFi = true;
 }
-void ESPWiFiMqttWrapper::setCertificate(const char* Certificate) {
+void ESPWiFiMqttWrapper::setCertificate(const char* certificate) {
+#if defined(ESP32)
+	this->_secureClient.setCertificate(certificate);
+#elif defined(ESP8266)
+	_certificate = X509List(certificate);
+#else
+#error "Unsupported platform"
+#endif 
+	this->_useSecureWiFi = true;
+}
+void ESPWiFiMqttWrapper::setPrivateKey(const char* privateKey) {
+#if defined(ESP32)
 	this->_secureClient.setCertificate(Certificate);
-	this->_useSecureWiFi = true;
-}
-void ESPWiFiMqttWrapper::setPrivateKey(const char* PrivateKey) {
-	this->_secureClient.setPrivateKey(PrivateKey);
+#elif defined(ESP8266)
+	_privateKey = PrivateKey(privateKey);
+#else
+#error "Unsupported platform"
+#endif 
 	this->_useSecureWiFi = true;
 }
 
+#if defined(ESP8266)
+void ESPWiFiMqttWrapper::setClock() {
+	configTime(3 * 3600, 0, "pool.ntp.org", "time.nist.gov");
+	this->print("Waiting for NTP time sync: ");
+	time_t now = time(nullptr);
+	while (now < 8 * 3600 * 2) {
+		delay(500);
+		Serial.print(".");
+		now = time(nullptr);
+	}
+	this->println("");
+	struct tm timeinfo;
+	gmtime_r(&now, &timeinfo);
+	this->print("Current time (UTC): ");
+	this->print(asctime(&timeinfo));
+}
+#endif
 void ESPWiFiMqttWrapper::initWiFi() {
-	int connectionAttempt = 0;
+	_reconnectWifiCount = 0;
 #if defined(ESP8266)
 	WiFi.disconnect(true);
 	delay(1000);
@@ -70,24 +101,36 @@ void ESPWiFiMqttWrapper::initWiFi() {
 	delay(100);
 	WiFi.config(INADDR_NONE, INADDR_NONE, INADDR_NONE);
 	delay(500);
-#endif
 	if (!WiFi.setHostname(this->_wifiHostName))
 	{
 		this->print("Failure to set hostname. Current Hostname : ");
 		this->println(WiFi.getHostname());
 	}
+#endif
 	WiFi.mode(WIFI_STA);
 	WiFi.begin(this->_wifiSSID, this->_wifiPass);
 	this->print("Connecting to WiFi ..");
 	while (WiFi.status() != WL_CONNECTED) {
 		this->print('.');
-		connectionAttempt++;
-		if (connectionAttempt >= (_maxReconnect + 1)) {
+		_reconnectWifiCount++;
+		if (_reconnectWifiCount >= (_maxReconnect + 1)) {
 			ESP.restart();
 		}
 		delay(1000);
 	}
+	this->print("Connected. IP Address: ");
 	this->println(WiFi.localIP());
+	_reconnectWifiCount = 0;
+
+#if defined(ESP8266)
+	if (_useSecureWiFi) {
+		if (_caCert.getCount() != 0)
+			_secureClient.setTrustAnchors(&_caCert);
+		if (_certificate.getCount() != 0)
+			_secureClient.setClientRSACert(&_certificate, &_privateKey);
+		setClock();
+	}
+#endif
 }
 
 void ESPWiFiMqttWrapper::setMqttServer(const char* mqttServer) {
@@ -202,11 +245,12 @@ bool ESPWiFiMqttWrapper::connectMqtt() {
 			this->println("Restart ESP...");
 			ESP.restart();
 		}
-		
 		this->print("Attempting MQTT connection: ");
 		// Attempt to connect
 		if (_mqttClient.connect(_mqttClientId, _mqttUsername, _mqttPassword)) {
-			this->println("connected");
+			this->print("Connected, MQTT Client Id: ");
+			this->println(_mqttClientId);
+
 			for (const auto& h : _subscribehandlers) {
 				this->print("Subscribing to ");
 				this->println(h->getTopicFilter());
@@ -217,8 +261,24 @@ bool ESPWiFiMqttWrapper::connectMqtt() {
 		}
 		else {
 			this->print("Failed, Reason Code=");
-			this->print(_mqttClient.state());
+			this->print(String(_mqttClient.state()));
 			this->println();
+#if defined(ESP32) || defined(ESP8266)
+			if (_useSecureWiFi) {
+				char buf[80];
+#if defined(ESP32)
+				int error = _secureClient.lastError(buf, sizeof(buf));
+				if (error) {
+					this->println("SSL Error: " + String(error)) + ", " + buf);
+				}
+#elif defined(ESP8266)
+				int sslError = _secureClient.getLastSSLError(buf, sizeof(buf));
+				if (sslError) {
+					this->println("SSL Error: " + String(sslError) + ", " + buf);
+				}
+#endif
+#endif
+			}
 		}
 	}
 	else
@@ -228,6 +288,10 @@ bool ESPWiFiMqttWrapper::connectMqtt() {
 bool ESPWiFiMqttWrapper::connectWiFi() {
 	bool result = false;
 	if (WiFi.status() == WL_CONNECTED) {
+		if (_reconnectWifiCount > 0) {
+			this->print("Connected. IP Address: ");
+			this->println(WiFi.localIP());
+		}
 		_reconnectWifiCount = 0;
 		result = true;
 	}
@@ -241,8 +305,13 @@ bool ESPWiFiMqttWrapper::connectWiFi() {
 			ESP.restart();
 		}
 		else {
-			this->println("Attempting WiFi connection...");
-			WiFi.reconnect();
+			if (_reconnectWifiCount == 1) {
+				this->print("Attempting WiFi connection...");
+				WiFi.reconnect();
+			}
+			else {
+				this->print(".");
+			}
 		}
 	}
 	return result;
