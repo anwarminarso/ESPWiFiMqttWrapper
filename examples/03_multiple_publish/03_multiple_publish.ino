@@ -1,5 +1,6 @@
 #include <Arduino.h>
 #include <ESPWiFiMqttWrapper.h>
+#include <ArduinoJson.h>
 
 //Code ini support untuk ESP32 dan ESP8266
 //Membutuhkan library ArduinoJSON dan library PubSubClient
@@ -49,7 +50,7 @@ void setup() {
 	//param3: fungsi membuat message
 	wrapper.setPublisher(MQTT_Publish_TOPIC_TEMP, PublishInterval_TEMP, [&] {
 		String message = "";
-		DynamicJsonDocument doc(512);
+		JsonDocument doc;
 
 		temperature = random(2500f, 3500f) / 100.0f;
 		humidity = random(7500f, 9000f) / 100.0f;
@@ -70,7 +71,7 @@ void setup() {
 	//param3: fungsi membuat message
 	wrapper.setPublisher(MQTT_Publish_TOPIC_GPS, PublishInterval_GPS, [&] {
 		String message = "";
-		DynamicJsonDocument doc(512);
+		JsonDocument doc;
 		
 		float lat = -6.3023799f;
 		float lon = 106.7189562f;

@@ -2,7 +2,7 @@
  // Copyright(c) 2022-2024 a2n Technology
  // Anwar Minarso (anwar.minarso@gmail.com)
  // https://github.com/anwarminarso/
- // This file is part of the a2n ESPWiFiMqttWrapper v1.0.3
+ // This file is part of the a2n ESPWiFiMqttWrapper v1.0.6
  //
  // This library is free software; you can redistribute it and/or
  // modify it under the terms of the GNU Lesser General Public
@@ -241,12 +241,13 @@ public:
 		return _interval <= _delta;
 	}
 	const char * handleFunction(void) {
-		const char * result = nullptr;
+		char* result = nullptr;
 		if (_func) {
 			String val = _func();
-			result = val.c_str();
+			int str_len = val.length() + 1;
+			result = (char*)malloc(str_len);
+			val.toCharArray(result, str_len);
 		}
-		
 		_lastMillis = millis();
 		return result;
 	}
@@ -280,11 +281,7 @@ private:
 	const char* _wifiHostName;
 	const char* _wifiSSID;
 	const char* _wifiPass;
-#if defined(ESP8266)
-	X509List _caCert;
-	X509List _certificate;
-	PrivateKey _privateKey;
-#endif
+
 	bool connectMqtt();
 	bool connectWiFi();
 
@@ -368,10 +365,15 @@ public:
 		_maxReconnect = value;
 	};
 	void setWiFi(const char* hostName, const char* SSID, const char* wifiPassword);
-
-	void setCACert(const char* Certificate);
-	void setCertificate(const char* Certificate);
+#if defined(ESP32)
+	void setCACert(const char* certificate);
+	void setCertificate(const char* certificate);
 	void setPrivateKey(const char* PrivateKey);
+#elif defined (ESP8266)
+	void setCACert(const X509List* certificate);
+	void setCertificate(const X509List* certificate, const  PrivateKey* privateKey);
+	//
+#endif
 
 	void useSecureWiFi(bool value) {
 		_useSecureWiFi = value;

@@ -1,5 +1,6 @@
 #include <Arduino.h>
 #include <ESPWiFiMqttWrapper.h>
+#include <ArduinoJson.h>
 
 //Code ini support untuk ESP32 dan ESP8266
 //Membutuhkan library ArduinoJSON dan library PubSubClient
@@ -44,7 +45,7 @@ void setup() {
 
 		////jika message adalah format json
 		////contoh jika message-nya adalah { "temp": 28.3, "hum": 78.4 }
-		//DynamicJsonDocument doc(512);
+		//JsonDocument doc;
 		//deserializeJson(doc, message);
 		//float temperature = doc["temp"];
 		//float humidity = doc["hum"];

@@ -1,6 +1,7 @@
 
 #include <Arduino.h>
 #include <ESPWiFiMqttWrapper.h>
+#include <ArduinoJson.h>
 #include "certificate.h"
 
 ESPWiFiMqttWrapper wrapper;
@@ -37,7 +38,7 @@ void setup() {
 	// Publishing to a topic must be allowed by an AWS IoT Policy
 	wrapper.setPublisher("esp32/pub", 3000, [&] {
 		String message = "";
-		DynamicJsonDocument doc(512);
+		JsonDocument doc;
 
 		float temp = random(2500.0f, 3500.0f) / 100.0f;
 		float hum = random(7500.0f, 9000.0f) / 100.0f;
