@@ -16,13 +16,6 @@
 //------------------------------------------------------------------
 
 #include "ESPWiFiMqttWrapper.h"
-
-#if defined(ESP8266)	
-X509List	WRAPPER_CA_CERT;
-X509List	WRAPPER_DEVICE_CERT;
-PrivateKey	WRAPPER_DEVICE_KEY;
-#endif
-
 String getWifiMacAddress() {
 	String macAddress = WiFi.macAddress();
 	macAddress.remove(14, 1);
